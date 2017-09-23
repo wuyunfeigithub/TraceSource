@@ -17,12 +17,15 @@ public class DateGetter {
 	public static Map<String, Set<String>> relations = new HashMap<>();
 	
 	static {
+		System.out.println("开始加载好友关系...");
 		String networkPath = PathConfig.network;
 		BufferedReader reader = null;
+		int count = 0;
 		try {
 			reader = new BufferedReader(new FileReader(new File(networkPath)));
 			String line = null;
 			while( (line = reader.readLine()) != null ){
+				if(count++ % 100 == 0) System.out.println("已加载" + count + "条！");
 				String[] data = line.split(",");
 				if(relations.containsKey(data[1])){
 					relations.get(data[1]).add(data[0]);
@@ -44,6 +47,7 @@ public class DateGetter {
 					e.printStackTrace();
 				}
 			}
+			System.out.println("加载好友关系结束！");
 		}
 		
 	}
