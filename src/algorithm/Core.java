@@ -85,6 +85,8 @@ public class Core {
 		int count = 0;
 		List<Candidate> list = new ArrayList<>(candidates);
 		for(Candidate candidate : list){
+			if(candidate.visited == true) continue;
+			candidate.visited = true;
 			Set<String> set = DateGetter.getRelations(candidate.id);
 			
 			for(String uid : set){
@@ -121,9 +123,7 @@ public class Core {
 						candidates.add(newCandidate);
 					}
 				}
-				if(count == 358)
-					System.out.println("已检测" + count + "个用户！");
-				System.out.println("已检测" + count++ + "个用户！");
+				System.out.println("已检测" + count++ + "/" + set.size() + "个用户！");
 			}
 		}
 		

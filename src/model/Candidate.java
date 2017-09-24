@@ -9,6 +9,7 @@ public class Candidate {
 	public int followeeCount;
 	public long time;
 	public long lastTime;
+	public boolean visited = false;
 	
 	public Candidate(String id, int followeeCount, long time, long lastTime) {
 		this.id = id;
@@ -19,7 +20,7 @@ public class Candidate {
 	}
 	
 	public void setScore(int followeeCount, long time, long lastTime) {
-		this.score = AlgorithmConfig.score_m * followeeCount + AlgorithmConfig.score_n * (lastTime - time);
+		this.score = AlgorithmConfig.score_m * followeeCount + AlgorithmConfig.score_n * ((lastTime - time) / 1000);
 	}
 	
 	public void setLastTime(long lastTime) {
