@@ -31,7 +31,6 @@ public class JsonHelper {
 			}
 
 			jsonObject = JSONObject.fromObject(jsonRaw);
-
 			if (fileInputStream != null)
 				fileInputStream.close();
 			if (inputStreamReader != null)
@@ -44,6 +43,10 @@ public class JsonHelper {
 		}
 	}
 
+	public JSONObject getJSONObject() {
+		return jsonObject;
+	}
+	
 	public int getIntProperty(String propertyName) {
 		return jsonObject.getInt(propertyName);
 	}
@@ -100,5 +103,33 @@ public class JsonHelper {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public static JSONArray readJSONArrayFromFile(String path) {
+		String jsonRaw = "";
+		BufferedReader reader = null;
+		JSONArray json = null;
+		try {
+			FileInputStream fileInputStream = new FileInputStream(path);
+			InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");// UTF-8
+			reader = new BufferedReader(inputStreamReader);
+
+			String tempString = null;
+			while ((tempString = reader.readLine()) != null) {
+				jsonRaw += tempString;
+			}
+
+			json = JSONArray.fromObject(jsonRaw);
+			if (fileInputStream != null)
+				fileInputStream.close();
+			if (inputStreamReader != null)
+				inputStreamReader.close();
+			if (reader != null)
+				reader.close();
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
+		return json;
 	}
 }

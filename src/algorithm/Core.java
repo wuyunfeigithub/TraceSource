@@ -1,10 +1,11 @@
 package algorithm;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -13,11 +14,14 @@ import configration.AlgorithmConfig;
 import configration.PathConfig;
 import dataProcess.DateGetter;
 import model.Candidate;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import util.JsonHelper;
 
 public class Core {
 
 	long curMinTime = new Date().getTime();
+	Set<String> filter = new HashSet<>();
 	
 	public PriorityQueue<Candidate> getTopKCandidate(){
 		PriorityQueue<Candidate> pq = new PriorityQueue<>(AlgorithmConfig.size, new Comparator<Candidate>() {
@@ -40,29 +44,25 @@ public class Core {
 		
 		List<String> list = Arrays.asList("465299066", "3010552459", "27112844");
 		List<Candidate> listCandidate = new ArrayList<>();
-		
 		for(String uid : list){
-			String tweetPath = PathConfig.getTweetPath(uid);			
-			File file = new File(tweetPath);
-			
+			filter.add(uid);
+			String tweetPath = PathConfig.getTweetPath(uid);
+			JSONArray jsonArray = JsonHelper.readJSONArrayFromFile(tweetPath);				
 			String content = null;
 			Long time = Long.MAX_VALUE;
 			int followeeCount = 0;
-			if(file.isDirectory()){
-				File[] name = file.listFiles();					
-				for(File ele : name){
-					JsonHelper jsonHelper = new JsonHelper(ele.getAbsolutePath());
-					String contentTemp = jsonHelper.getStringProperty("text");
-					Long timeTemp = jsonHelper.getLongProperty("createAt");
-					if(!isValiditeOfTweet(contentTemp))	continue;
-					if(timeTemp < time){
-						content = contentTemp;
-						time = timeTemp;							
-						followeeCount = new JsonHelper(PathConfig.getUserPath(uid)).getIntProperty("friendsCount");							
-						curMinTime = Math.min(curMinTime, time);
-					}
+			for(int i = 0; i < jsonArray.size(); i++){
+				JSONObject jb = jsonArray.getJSONObject(i);
+				String contentTemp = jb.getString("text");
+				Long timeTemp = jb.getLong("createAt");
+				if(!isValiditeOfTweet(contentTemp))	continue;
+				if(timeTemp < time){
+					content = contentTemp;
+					time = timeTemp;							
+					followeeCount = new JsonHelper(PathConfig.getUserPath(uid)).getIntProperty("friendsCount");							
+					curMinTime = Math.min(curMinTime, time);
 				}
-			}
+			}			
 			if(content == null) continue;
 			listCandidate.add(new Candidate(uid, followeeCount, time, curMinTime));
 		}
@@ -82,51 +82,55 @@ public class Core {
 	}
 	
 	private void updateCandidate(PriorityQueue<Candidate> candidates){
-		int count = 0;
-		List<Candidate> list = new ArrayList<>(candidates);
-		for(Candidate candidate : list){
+		List<Candidate> list = new LinkedList<>(candidates);
+		for(Candidate candidate : candidates){
 			if(candidate.visited == true) continue;
 			candidate.visited = true;
-			Set<String> set = DateGetter.getRelations(candidate.id);
-			
-			for(String uid : set){
-				String tweetPath = PathConfig.getTweetPath(uid);
-				
-				File file = new File(tweetPath);
-				
-				String content = null;
-				Long time = Long.MAX_VALUE;
-				int followeeCount = 0;
-				if(file.isDirectory()){
-					File[] name = file.listFiles();					
-					for(File ele : name){
-						JsonHelper jsonHelper = new JsonHelper(ele.getAbsolutePath());
-						String contentTemp = jsonHelper.getStringProperty("text");
-						Long timeTemp = jsonHelper.getLongProperty("createAt");
+			int count = 0;
+			Set<String> set = DateGetter.getRelations(candidate.id);			
+			for(String uid : set){	
+				if(filter.contains(uid)) continue;
+				else filter.add(uid);
+				try {
+					String tweetPath = PathConfig.getTweetPath(uid);					
+					JSONArray jsonArray = JsonHelper.readJSONArrayFromFile(tweetPath);						
+					String content = null;
+					Long time = Long.MAX_VALUE;
+					int followeeCount = 0;
+					for(int i = 0; i < jsonArray.size(); i++){
+						JSONObject jb = jsonArray.getJSONObject(i);
+						String contentTemp = jb.getString("text");
+						Long timeTemp = jb.getLong("createAt");
 						if(!isValiditeOfTweet(contentTemp))	continue;
 						if(timeTemp < time){
 							content = contentTemp;
 							time = timeTemp;							
 							followeeCount = new JsonHelper(PathConfig.getUserPath(uid)).getIntProperty("friendsCount");							
+							curMinTime = Math.min(curMinTime, time);
 						}
-					}
+					}	
+					System.out.println("已检测" + count++ + "/" + set.size() + "个用户！");
+					if(content == null) continue;
+					list.add(new Candidate(uid, followeeCount, time, curMinTime));					
 				}
-				if(content == null) continue;
-				Candidate newCandidate = new Candidate(uid, followeeCount, time, curMinTime);
-				if(candidates.size() < AlgorithmConfig.size){
-					candidates.add(newCandidate);
-				}
-				else {
-					Candidate peek = candidates.peek();
-					if(peek.score < newCandidate.score) {
-						candidates.remove();
-						candidates.add(newCandidate);
-					}
-				}
-				System.out.println("已检测" + count++ + "/" + set.size() + "个用户！");
+				catch (Exception e) {
+					e.printStackTrace();
+				}				
 			}
 		}
-		
+		for(Candidate ele : list){
+			if(candidates.size() < AlgorithmConfig.size){
+				candidates.add(ele);
+			}
+			else {
+				Candidate peek = candidates.peek();
+				if(peek.score < ele.score) {
+					candidates.remove();
+					candidates.add(ele);
+				}
+			}
+		}
+		list.clear();
 	}
 	
 	private boolean isValiditeOfTweet(String text){

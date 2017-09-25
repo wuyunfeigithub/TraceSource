@@ -12,7 +12,7 @@ public class PathConfig {
 	public static final String subNetwork = topicPath + seperator + "network" + seperator + "sub_network.txt";
 	
 	public static String getTweetPath(String uid){
-		return statuses + seperator + uid;
+		return statuses + seperator + uid + seperator + "combine.txt";
 	}
 	
 	public static String getUserPath(String uid){

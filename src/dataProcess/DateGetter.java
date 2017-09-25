@@ -58,11 +58,11 @@ public class DateGetter {
 	public static Set<String> getRelations(String uid){
 		
 		Iterator<Entry<String, Set<String>>> it = relations.entrySet().iterator();
-		int max = 0;
-		while(it.hasNext()){
-			max = Math.max(max, it.next().getValue().size());
-		}
-		System.out.println(max);
+//		int max = 0;
+//		while(it.hasNext()){
+//			max = Math.max(max, it.next().getValue().size());
+//		}
+//		System.out.println(max);
 		return relations.get(uid);
 	}
 	
